@@ -1,0 +1,10 @@
+let 
+Source = Json.Document(Web.Contents("https://mypipedrive.pipedrive.com/v1/users?api_token=your_api_token",[Query=[api_token="your_api_token", limit="100", start="0", get_summary="1"]])),
+    data = Source[data],
+    #"Convertida en tabla" = Table.FromList(data, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Se expandió Column1" = Table.ExpandRecordColumn(#"Convertida en tabla", "Column1", {"id", "name", "email", "phone", "lang", "locale", "timezone_name", "timezone_offset", "default_currency", "icon_url", "active_flag", "is_admin", "role_id", "created", "modified", "last_login", "signup_flow_variation", "has_created_company", "is_you"}, {"Column1.id", "Column1.name", "Column1.email", "Column1.phone", "Column1.lang", "Column1.locale", "Column1.timezone_name", "Column1.timezone_offset", "Column1.default_currency", "Column1.icon_url", "Column1.active_flag", "Column1.is_admin", "Column1.role_id", "Column1.created", "Column1.modified", "Column1.last_login", "Column1.signup_flow_variation", "Column1.has_created_company", "Column1.is_you"}),
+    #"Otras columnas quitadas" = Table.SelectColumns(#"Se expandió Column1",{"Column1.id", "Column1.name", "Column1.email", "Column1.last_login"}),
+    #"Tipo cambiado" = Table.TransformColumnTypes(#"Otras columnas quitadas",{{"Column1.last_login", type datetime}}),
+    #"Columnas con nombre cambiado" = Table.RenameColumns(#"Tipo cambiado",{{"Column1.name", "USER"}})
+in
+    #"Columnas con nombre cambiado"
