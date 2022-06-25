@@ -1,0 +1,15 @@
+let 
+Source = Json.Document(Web.Contents("https://mypipedrive.pipedrive.com/v1/stages?api_token=your_api_token",[Query=[api_token="your_api_token", limit="1", start="0", get_summary="1"]])),
+    data = Source[data],
+    
+    
+    #"Convertida en tabla" = Table.FromList(data, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    
+    //transform 
+    #"Se expandió Column1" = Table.ExpandRecordColumn(#"Convertida en tabla", "Column1", {"id", "order_nr", "name", "active_flag", "deal_probability", "pipeline_id", "rotten_flag", "rotten_days", "add_time", "update_time", "pipeline_name", "pipeline_deal_probability"}, {"Column1.id", "Column1.order_nr", "Column1.name", "Column1.active_flag", "Column1.deal_probability", "Column1.pipeline_id", "Column1.rotten_flag", "Column1.rotten_days", "Column1.add_time", "Column1.update_time", "Column1.pipeline_name", "Column1.pipeline_deal_probability"}),
+    #"Filas ordenadas" = Table.Sort(#"Se expandió Column1",{{"Column1.order_nr", Order.Ascending}}),
+    #"Columnas con nombre cambiado" = Table.RenameColumns(#"Filas ordenadas",{{"Column1.pipeline_name", "Pipeline Name"}, {"Column1.name", "Stage Name"}, {"Column1.order_nr", "Stage Number"}}),
+    #"Otras columnas quitadas" = Table.SelectColumns(#"Columnas con nombre cambiado",{"Column1.id", "Stage Number", "Stage Name", "Column1.add_time", "Column1.update_time", "Pipeline Name", "Column1.pipeline_deal_probability","Column1.pipeline_id"}),
+    #"Tipo cambiado" = Table.TransformColumnTypes(#"Otras columnas quitadas",{{"Column1.update_time", type datetime}, {"Column1.add_time", type datetime}})
+in
+    #"Tipo cambiado"
