@@ -1,0 +1,21 @@
+//credits to davser: https://github.com/davser/PipedriveTOPowerBI
+
+
+let 
+Source = Json.Document(Web.Contents("https://mypipedrive.pipedrive.com/v1/deals:(id)?api_token=your_api_token",[Query=[api_token="your_api_token", limit="1", start="0", get_summary="1"]])), 
+#"Converted to Table Record" = Record.ToTable(Source),
+Value = #"Converted to Table Record"{2}[Value],
+summary = Value[summary],
+total_records = summary[total_count],
+
+//This second part, tries to resolve the maximum limit value of 500 that pipedrive have
+//Starts 0, 500, 1000, 1500 until the total records
+
+Starts = List.Generate(()=>0, each _ < total_records, each _ + 500), 
+#"Converted to Table" = Table.FromList(Starts, Splitter.SplitByNothing(), null, null, ExtraValues.Error), 
+#"Changed Type" = Table.TransformColumnTypes(#"Converted to Table",{{"Column1", type text}}), 
+#"Added Custom" = Table.AddColumn(#"Changed Type", "Custom", each Json.Document(Web.Contents("https://mypipedrive.pipedrive.com/v1/deals?api_token=your_api_token",[Query=[api_token="your_api_token", limit="500", start=[Column1]]]))),
+    #"Se expandió Custom" = Table.ExpandRecordColumn(#"Added Custom", "Custom", {"success", "data", "additional_data", "related_objects"}, {"Custom.success", "Custom.data", "Custom.additional_data", "Custom.related_objects"}),
+    #"Se expandió Custom.data" = Table.ExpandListColumn(#"Se expandió Custom", "Custom.data"),
+    
+    in...
